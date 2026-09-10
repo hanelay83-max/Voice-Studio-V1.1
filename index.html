@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="my">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#7b4ce2">
+  <title>မြန်မာ Voice Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="ambient ambient-c"></div>
+  <button class="sidebar-toggle" id="transcript-toggle" type="button" aria-label="Video Transcript">☰ <span>Video Transcript</span></button>
+  <aside class="transcript-sidebar" id="transcript-sidebar" aria-hidden="true">
+    <div class="sidebar-head"><div><span class="eyebrow">AI TRANSCRIPT</span><h2>Video → မြန်မာ Transcript</h2></div><button id="transcript-close" class="sidebar-close" type="button">×</button></div>
+    <p class="sidebar-desc">YouTube link ဖြစ်ရင် External Transcript website ကို အရင်သုံးပြီး Whisper/yt-dlp download error မဖြစ်အောင် ပြင်ထားပါတယ်။ မရရင် Whisper engine သို့ auto fallback လုပ်ပေးမယ်။</p>
+
+    <div class="transcript-source-tabs" role="tablist">
+      <button type="button" class="source-tab active" data-source="url">🔗 Video Link</button>
+      <button type="button" class="source-tab" data-source="file">📁 Upload File</button>
+    </div>
+
+    <div id="transcript-url-source">
+      <label class="field-label" for="video-url">Video Link</label>
+      <input id="video-url" class="video-url" type="url" placeholder="YouTube / Vimeo / direct video link / other public URL">
+      <small class="muted source-help">YouTube link တွေအတွက် External Transcript service ကို အရင်သုံးပါတယ်။ YouTube မဟုတ်တဲ့ public URL တွေက Whisper server က media download လုပ်နိုင်မှ အလုပ်လုပ်ပါမယ်။ Private/login URL တွေက မရနိုင်ပါ။</small>
+    </div>
+
+    <div id="transcript-file-source" hidden>
+      <label class="field-label">Download လုပ်ထားတဲ့ Video / Audio</label>
+      <label class="dropzone transcript-dropzone" id="transcript-dropzone">
+        <input id="transcript-file-input" type="file" accept="video/*,audio/*,.mp4,.mkv,.webm,.mov,.avi,.m4v,.mp3,.wav,.m4a,.ogg,.flac">
+        <span class="upload-icon">↑</span><strong id="transcript-file-title">Video / Audio ဖိုင်ရွေးပါ သို့မဟုတ် ဆွဲချပါ</strong>
+        <small id="transcript-file-meta">MP4, MKV, WebM, MOV, MP3, WAV, M4A • 1GB အထိ</small>
+      </label>
+      <button type="button" class="remove-file" id="remove-transcript-file" hidden>ဖိုင်ဖယ်ရှားမည်</button>
+    </div>
+
+    <div class="transcript-options">
+      <label class="field-label" for="transcript-lang">မူရင်းဘာသာ (Input)</label>
+      <div class="target-language-note">🎯 Output ဘာသာ = <strong>မြန်မာ</strong> — Video ဘာသာစကား ဘယ်ဘာသာဖြစ်ဖြစ် မြန်မာ Transcript အဖြစ်ပြောင်းပေးမည်</div>
+      <select id="transcript-lang"><option value="">Auto Detect</option><option value="english">English</option><option value="japanese">Japanese</option><option value="korean">Korean</option><option value="chinese">Chinese</option><option value="thai">Thai</option><option value="burmese">Burmese</option></select>
+      <label class="check"><input id="transcript-vad" type="checkbox" checked> အသံမရှိတဲ့အပိုင်းတွေ ဖယ်ပြီး စကားပြောအပိုင်းကိုပဲယူမည်</label>
+      <label class="check"><input id="transcript-auto-route" type="checkbox" checked> Transcript ပြီးရင် Audio/TTS နေရာကို auto သွားမည်</label>
+      <label class="field-label" for="transcript-format">ထွက်ဖိုင်ပုံစံ</label>
+      <select id="transcript-format">
+        <option value="simple">Simple Transcript</option>
+        <option value="srt">SRT Subtitle</option>
+      </select>
+    </div>
+    <button id="transcript-generate" class="generate transcript-generate" type="button"><span id="transcript-label">Transcript လုပ်မည်</span><span id="transcript-spinner" hidden class="spinner"></span></button>
+    <div id="transcript-status" class="status" aria-live="polite">Video link ထည့်ပါ သို့မဟုတ် ဖိုင်တင်ပါ</div>
+    <div id="transcript-progress-wrap" class="progress-wrap" hidden><div class="progress-track"><div id="transcript-progress-bar" class="progress-bar"></div></div><div id="transcript-progress-text" class="progress-text"></div></div>
+    <label class="field-label transcript-result-label" for="transcript-output">မြန်မာ Transcript</label>
+    <textarea id="transcript-output" class="transcript-output" rows="14" placeholder="Transcript ရလာရင် ဒီနေရာမှာ ပြပါမယ်..."></textarea>
+    <div class="transcript-actions"><button id="transcript-copy" type="button" disabled>Copy</button><button id="transcript-download" type="button" disabled>↓ TXT</button><button id="transcript-use" type="button" disabled>Audio နေရာသို့</button></div>
+    <small class="muted transcript-note">Simple Transcript သို့မဟုတ် SRT Subtitle ကို ရွေးနိုင်ပါတယ်။ SRT mode မှာ timestamp ပါတဲ့ subtitle ကို မြန်မာဘာသာပြန်ပြီး ထုတ်ပေးပါမယ်။ YouTube အတွက် External Transcript service ၂ ခုကို အရင်စမ်းပြီး မရရင် Whisper fallback ကို သုံးပါတယ်။</small>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <header class="topbar"><div class="brand"><div class="profile-ring"><img src="profile.jpg" alt="Voice Studio profile"></div><div><h1>မြန်မာ <span>VOICE STUDIO</span></h1><p>AI Text-to-Speech & Voice Cloning</p></div></div><div class="top-actions"><div class="local-pill">● LOCAL MODE</div><div class="lang-switch" id="lang-switch" role="group" aria-label="UI language">
+  <button type="button" class="lang-btn active" data-lang="my" aria-pressed="true"><span class="lang-logo">MM</span><span class="lang-name">မြန်မာ</span></button>
+  <span class="lang-divider">/</span>
+  <button type="button" class="lang-btn" data-lang="en" aria-pressed="false"><span class="lang-logo">EN</span><span class="lang-name">English</span></button>
+</div></div></header>
+  <main class="layout">
+    <section class="card controls">
+      <div class="section-title"><span class="eyebrow">၁ / INPUT</span><h2>အသံဖန်တီးရန်</h2><p>စာထည့်ပြီး အသံပုံစံရွေးပါ</p></div>
+      <div class="tabs" role="tablist"><button class="tab active" data-mode="tts" role="tab">✍️ စာမှအသံ<span>Text to Speech</span></button><button class="tab" data-mode="clone" role="tab">🎙️ အသံပွားရန်<span>Voice Cloning</span></button></div>
+      <label class="field-label" for="text-input">ဖတ်မည့်စာသား <span id="char-count">0</span> စာလုံး</label>
+      <textarea id="text-input" rows="10" placeholder="ဥပမာ — မင်္ဂလာပါ။ ဒီနေ့ကောင်းသောနေ့လေး ဖြစ်ပါစေ..." required></textarea>
+      <div class="quick-row"><button type="button" class="sample" data-sample="မင်္ဂလာပါ။ မြန်မာ Voice Studio မှ ကြိုဆိုပါတယ်။ သင်ရေးသားထားသောစာကို သဘာဝကျသောအသံဖြင့် ဖန်တီးပေးနိုင်ပါတယ်။">နမူနာထည့်ရန်</button><button type="button" class="clear" id="clear-text">ရှင်းလင်းမည်</button></div>
+      <div class="provider-row"><label class="field-label" for="provider">AI Engine</label><select id="provider"><option value="auto">Auto — VoxCPM → OmniVoice auto fallback</option><option value="voxcpm">VoxCPM2 — quality / style</option><option value="omnivoice">OmniVoice — 600+ languages / cloning</option></select><small class="muted">စာသားရှည်ရင် အပိုင်းခွဲပြီး အစဉ်မပျက် ပြန်ပေါင်းပေးမည် • Engine မအောင်မြင်/Quota မလုံလောက်ရင် နောက် engine သို့ auto fallback လုပ်မည်</small></div>
+      <div id="tts-options">
+        <label class="field-label" for="style-input">အသံပုံစံဖော်ပြချက်</label>
+        <input id="style-input" type="text" placeholder="နွေးထွေးသော မြန်မာအမျိုးသားအသံ၊ ဖြည်းဖြည်းပြောပါ">
+        <div class="chips"><button type="button" class="chip" data-style="နွေးထွေးသော မြန်မာအမျိုးသားအသံ၊ ရှင်းရှင်းလင်းလင်းပြောပါ">နွေးထွေး</button><button type="button" class="chip" data-style="မြန်မာအမျိုးသမီးအသံ၊ နူးညံ့ပြီး သဘာဝကျပါစေ">နူးညံ့</button><button type="button" class="chip" data-style="ကြေညာသူအသံ၊ ယုံကြည်မှုရှိပြီး တက်ကြွပါစေ">ကြေညာသူ</button><button type="button" class="chip" data-style="ဖြည်းဖြည်းနှင့် သက်တောင့်သက်သာ ပြောပါ">သက်တောင့်သက်သာ</button></div>
+      </div>
+      <div id="clone-options" hidden>
+        <label class="field-label">Reference အသံဖိုင်</label>
+        <label class="dropzone" id="dropzone"><input id="audio-input" type="file" accept="audio/*"><span class="upload-icon">↑</span><strong id="file-title">အသံဖိုင်ရွေးပါ သို့မဟုတ် ဆွဲချပါ</strong><small id="file-meta">WAV, MP3, OGG • 20MB အထိ</small></label>
+        <button type="button" class="remove-file" id="remove-file" hidden>ဖိုင်ဖယ်ရှားမည်</button>
+        <label class="check"><input id="denoise" type="checkbox" checked> Reference အသံ noise လျှော့မည်</label>
+      </div>
+      <div class="advanced"><div class="advanced-head"><span>အဆင့်မြင့်ရွေးချယ်စရာ</span><button type="button" id="toggle-advanced">ဖွင့်မည်</button></div><div id="advanced-body" hidden><label class="range-label">Creativity <output id="cfg-value">2.0</output></label><input id="cfg" type="range" min="1" max="3" step="0.1" value="2"><label class="check"><input id="normalize" type="checkbox" checked> စာလုံး၊ နံပါတ်များကို ပုံမှန်ဖတ်မည်</label><label class="field-label hf-token-label" for="hf-account">Hugging Face Account</label><div class="hf-account-row"><select id="hf-account" class="token-select"><option value="">Anonymous / မချိတ်ထားပါ</option></select><button type="button" id="add-hf-account" class="token-btn">＋ အကောင့်ထည့်</button><button type="button" id="remove-hf-account" class="token-btn danger" disabled>ဖျက်</button></div><small class="token-help">ကိုယ်ပိုင် Hugging Face account token တွေကို <b>manual</b> ပြောင်းသုံးနိုင်ပါတယ်။ Account တစ်ခုချင်းစီရဲ့ ကိုယ်ပိုင် quota ကိုပဲ အသုံးပြုမည်။ Engine failover ကတော့ quota ကျော်ဖို့ account လှည့်ခြင်းမဟုတ်ဘဲ သီးခြား TTS engine သို့ ပြောင်းပေးခြင်းသာ ဖြစ်ပါတယ်။ Token များကို ဒီ browser session ထဲမှာသာ သိမ်းမည်။</small></div></div>
+      <button class="generate" id="generate" type="button"><span id="generate-label">အသံဖန်တီးမည်</span><span id="spinner" hidden class="spinner"></span></button>
+      <div id="status" class="status" aria-live="polite">စတင်အသုံးပြုရန် စာသားထည့်ပါ</div><div id="progress-wrap" class="progress-wrap" hidden><div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div><div id="progress-text" class="progress-text"></div></div>
+    </section>
+    <section class="card preview">
+      <div class="preview-head"><div><span class="eyebrow">၂ / OUTPUT</span><h2>ထွက်ရှိလာသောအသံ</h2></div><button id="download" class="download" disabled>↓ Download</button></div>
+      <div id="empty" class="empty"><div class="sound-icon">◖)))</div><h3>အသံမရှိသေးပါ</h3><p>စာသားထည့်ပြီး “အသံဖန်တီးမည်” ကိုနှိပ်ပါ</p></div>
+      <div id="result" hidden><div class="result-badge">✓ ဖန်တီးပြီးပါပြီ</div><audio id="audio-player" controls></audio><div class="meta"><span id="mode-meta">—</span><span id="duration-meta">—</span><span id="size-meta">—</span></div><div class="wave" id="wave"></div></div>
+      <div class="how"><h3>အသုံးပြုပုံ</h3><div class="steps"><div><b>၁</b><span>စာသားရေးပါ</span></div><div><b>၂</b><span>အသံပုံစံရွေးပါ</span></div><div><b>၃</b><span>ဖန်တီးပြီး download လုပ်ပါ</span></div></div></div>
+      <div class="privacy">🔒 သင့်စာသားနှင့်အသံဖိုင်ကို ကိုယ်ပိုင် server မသိမ်းပါ။ အသံဖန်တီးချိန်တွင် Hugging Face VoxCPM demo သို့သာ ပို့ပါသည်။</div>
+    </section>
+  </main>
+  <section class="card history"><div class="history-head"><div><span class="eyebrow">LOCAL HISTORY</span><h2>နောက်ဆုံးဖန်တီးထားသည်များ</h2></div><button id="clear-history">မှတ်တမ်းရှင်းမည်</button></div><div id="history-list" class="history-list"><p class="muted">ဒီ browser ထဲမှာသာ မှတ်တမ်းတင်ထားပါမည်။</p></div></section>
+  <footer>မြန်မာ Voice Studio • Personal use • Powered by VoxCPM<br><strong class="rgb-credit">Create by HPA</strong></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
